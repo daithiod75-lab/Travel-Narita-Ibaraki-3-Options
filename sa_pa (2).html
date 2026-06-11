@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成田・茨城・勝田 ➔ 水戸・友部SA・東海PA ドライブナビ (Dark Blue Edition)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        }
+        /* Leaflet tiles dark-mode filter configuration */
+        .leaflet-tile-container {
+            filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(95%);
+        }
+        /* Custom scrollbar for beautiful dark styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Map control buttons custom override */
+        .leaflet-bar a {
+            background-color: #1e293b !important;
+            color: #f8fafc !important;
+            border-bottom: 1px solid #334155 !important;
+        }
+        .leaflet-bar a:hover {
+            background-color: #38bdf8 !important;
+            color: #0f172a !important;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-[#0b0f19] via-[#0f172a] to-[#1e1e2f] text-slate-100 min-h-screen transition-all duration-300">
+
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-[#0b0f19]/80 border-b border-[#1e293b] shadow-lg shadow-cyan-950/15">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-2.5 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                    <i class="fa-solid fa-compass text-xl animate-pulse text-cyan-200"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-sm md:text-lg tracking-tight bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                        成田・茨城・勝田 ➔ 水戸・友部SA・東海PA
+                    </h1>
+                    <p class="text-[10px] md:text-xs text-cyan-400 font-semibold tracking-wider">
+                        週末夕方・夜のドライブナビ (18:30出発最適化 - GPS Edition)
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <!-- Language Toggle Button -->
+                <button id="langToggle" class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs border border-cyan-500/30 shadow-md shadow-cyan-500/10 transition-all">
+                    English
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            
+            <!-- Left Side: Route Category Selector & Route Cards (5 Cols) -->
+            <div class="lg:col-span-5 flex flex-col justify-between space-y-5">
+                <div class="space-y-4">
+                    
+                    <!-- Category Switcher (Tabs) with dark premium styles -->
+                    <div class="bg-slate-900/90 p-1.5 rounded-2xl flex flex-wrap sm:flex-nowrap gap-1 border border-slate-800 shadow-inner">
+                        <button id="tabCategory1" onclick="switchCategory('narita_mito')" class="flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-extrabold rounded-xl bg-slate-800 text-cyan-400 shadow-md transition-all duration-300">
+                            <i class="fa-solid fa-plane-departure mr-1 text-cyan-400"></i>
+                            <span data-en="Narita ➔ Mito" data-ja="成田空港 ➔ 水戸駅">成田空港 ➔ 水戸駅</span>
+                        </button>
+                        <button id="tabCategory2" onclick="switchCategory('tomobe_sa')" class="flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-extrabold rounded-xl text-slate-400 hover:text-cyan-300 transition-all duration-300">
+                            <i class="fa-solid fa-square-parking mr-1 text-emerald-400"></i>
+                            <span data-en="To Tomobe SA" data-ja="友部SA行">友部SA行</span>
+                        </button>
+                        <button id="tabCategory3" onclick="switchCategory('tokai_pa')" class="flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-extrabold rounded-xl text-slate-400 hover:text-cyan-300 transition-all duration-300">
+                            <i class="fa-solid fa-mug-hot mr-1 text-amber-500"></i>
+                            <span data-en="To Tokai PA" data-ja="東海PA行">東海PA行</span>
+                        </button>
+                    </div>
+
+                    <div class="flex justify-between items-center px-1">
+                        <h2 class="text-base md:text-lg font-black tracking-tight text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-map-location-dot text-cyan-400 text-lg animate-bounce"></i>
+                            <span id="routeListHeader" data-en="Select Drive Route" data-ja="ドライブルート選択">ドライブルート選択</span>
+                        </h2>
+                        <span class="text-xs bg-cyan-950/50 text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded-full font-bold shadow-inner" data-en="Weekend Evening Optimized" data-ja="週末夜に最適化済">週末夜に最適化済</span>
+                    </div>
+
+                    <!-- Category 1 Route Cards (Narita to Mito) -->
+                    <div class="space-y-4" id="category1-cards">
+                        
+                        <!-- Route 1: Requested Custom Route -->
+                        <div id="card-route1" onclick="selectRoute(1)" class="cursor-pointer border-2 border-rose-500/80 bg-slate-900/60 p-4 rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 h-2 w-full bg-rose-500"></div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-rose-950/60 text-rose-400 border border-rose-500/30 text-xs font-bold px-2.5 py-1 rounded-lg">
+                                    <span data-en="Route 1: Custom" data-ja="ルート1：ご要望ルート">ルート1：ご要望ルート</span>
+                                </span>
+                                <div class="text-right">
+                                    <div class="text-lg font-black text-rose-400">1h 55m - 2h 10m</div>
+                                    <div class="text-[11px] font-bold text-slate-400">95 km &bull; Toll ~¥1,500</div>
+                                </div>
+                            </div>
+                            <h3 class="font-extrabold text-slate-200 text-base" data-en="Via Itako, Hokota & Ibaraki-machi" data-ja="潮来・鉾田・茨城町 経由">潮来・鉾田・茨城町 経由</h3>
+                            <p class="text-xs text-slate-400 mt-1.5" data-en="Scenic and localized hybrid driving experience. Passing through agricultural hearts." data-ja="田園風景とローカルな街並みを楽しむ、一般道＆高速道路の混成コース。">田園風景とローカルな街並みを楽しむ、一般道＆高速道路の混成コース。</p>
+                            <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                                <span class="text-amber-400 font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <span data-en="Local traffic in Hokota" data-ja="鉾田周辺 of 信号・農耕車に注意">鉾田周辺 of 信号・農耕車に注意</span>
+                                </span>
+                                <span class="text-rose-400 font-extrabold group-hover:translate-x-1.5 transition-transform" data-en="View Directions →" data-ja="道順を表示 →">道順を表示 →</span>
+                            </div>
+                        </div>
+
+                        <!-- Route 2: Speed Expressway Route (Updated Sky Blue to Deep Royal Blue) -->
+                        <div id="card-route2" onclick="selectRoute(2)" class="cursor-pointer border-2 border-transparent bg-slate-900/60 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 h-2 w-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-all"></div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-blue-950/60 text-blue-400 border border-blue-500/30 text-xs font-bold px-2.5 py-1 rounded-lg">
+                                    <span data-en="Route 2: Expressway" data-ja="ルート2：高速道路最速">ルート2：高速道路最速</span>
+                                </span>
+                                <div class="text-right">
+                                    <div class="text-lg font-black text-blue-400">1h 25m - 1h 35m</div>
+                                    <div class="text-[11px] font-bold text-slate-400">115 km &bull; Toll ~¥3,800</div>
+                                </div>
+                            </div>
+                            <h3 class="font-extrabold text-slate-200 text-base" data-en="Via Ken-O & Joban Expressway" data-ja="圏央道・常磐道ルート（最速・快適）">圏央道・常磐道ルート（最速・快適）</h3>
+                            <p class="text-xs text-slate-400 mt-1.5" data-en="Fastest, brightest and stress-free. Bypasses dark rural local roads." data-ja="高速道路一本で最速かつ安全。夜間照明も整っており、走行疲労が最小限です。">高速道路一本で最速かつ安全。夜間照明も整っており、走行疲労が最小限です。</p>
+                            <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                                <span class="text-emerald-400 font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    <span data-en="Highly Recommended at Night" data-ja="夜間の運転に最もおすすめ">夜間の運転に最もおすすめ</span>
+                                </span>
+                                <span class="text-blue-400 font-extrabold group-hover:translate-x-1.5 transition-transform" data-en="View Directions →" data-ja="道順を表示 →">道順を表示 →</span>
+                            </div>
+                        </div>
+
+                        <!-- Route 3: Coastal Route -->
+                        <div id="card-route3" onclick="selectRoute(3)" class="cursor-pointer border-2 border-transparent bg-slate-900/60 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 h-2 w-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition-all"></div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 text-xs font-bold px-2.5 py-1 rounded-lg">
+                                    <span data-en="Route 3: Coastal Bypass" data-ja="ルート3：沿岸国道ルート">ルート3：沿岸国道ルート</span>
+                                </span>
+                                <div class="text-right">
+                                    <div class="text-lg font-black text-emerald-400">1h 45m - 1h 55m</div>
+                                    <div class="text-[11px] font-bold text-slate-400">85 km &bull; Toll ~¥1,100</div>
+                                </div>
+                            </div>
+                            <h3 class="font-extrabold text-slate-200 text-base" data-en="Via Route 51 Coastal Bypass" data-ja="国道51号（鹿嶋・大洗）沿岸ルート">国道51号（鹿嶋・大洗）沿岸ルート</h3>
+                            <p class="text-xs text-slate-400 mt-1.5" data-en="Simple navigation, minimal tolls. Mostly a single wide highway." data-ja="広々としたバイパスを走るお財布に優しいルート。道がシンプルで迷いません。">広々としたバイパスを走るお財布に優しいルート。道がシンプルで迷いません。</p>
+                            <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                                <span class="text-amber-400 font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    <span data-en="Watch for speed traps" data-ja="速度取締り（オービス）多発エリア">速度取締り（オービス）多発エリア</span>
+                                </span>
+                                <span class="text-emerald-400 font-extrabold group-hover:translate-x-1.5 transition-transform" data-en="View Directions →" data-ja="道順を表示 →">道順を表示 →</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Category 2 Route Cards (To Tomobe SA) -->
+                    <div class="space-y-4 hidden" id="category2-cards">
+                        
+                        <!-- Route 4: Ibaraki-Machi to Tomobe SA -->
+                        <div id="card-route4" onclick="selectRoute(4)" class="cursor-pointer border-2 border-transparent bg-slate-900/60 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 h-2 w-full bg-teal-500 opacity-0 group-hover:opacity-100 transition-all"></div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-teal-950/60 text-teal-400 border border-teal-500/30 text-xs font-bold px-2.5 py-1 rounded-lg">
+                                    <span data-en="Route 4: Ibaraki-Machi ➔ SA" data-ja="ルート4：茨城町 ➔ 友部SA">ルート4：茨城町 ➔ 友部SA</span>
+                                </span>
+                                <div class="text-right">
+                                    <div class="text-lg font-black text-teal-400">15m - 20m</div>
+                                    <div class="text-[11px] font-bold text-slate-400">18 km &bull; Toll ~¥410</div>
+                                </div>
+                            </div>
+                            <h3 class="font-extrabold text-slate-200 text-base" data-en="Via Ibaraki-machi Nishi IC" data-ja="茨城町西IC ➔ 常磐道（下り）接続">茨城町西IC ➔ 常磐道（下り）接続</h3>
+                            <p class="text-xs text-slate-400 mt-1.5" data-en="Direct expressway connection. Merge onto Joban Expressway northbound from Tomobe JCT." data-ja="一般道からすぐに乗れる北関東道ルート。友部JCTから常磐道いわき方面へ合流後すぐにSAへ直結。">一般道からすぐに乗れる北関東道ルート。友部JCTから常磐道いわき方面へ合流後すぐにSAへ直結。</p>
+                            <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                                <span class="text-emerald-400 font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-bolt"></i>
+                                    <span data-en="Short & Swift Route" data-ja="短時間かつ非常にシンプルな経路">短時間かつ非常にシンプルな経路</span>
+                                </span>
+                                <span class="text-teal-400 font-extrabold group-hover:translate-x-1.5 transition-transform" data-en="View Directions →" data-ja="道順を表示 →">道順を表示 →</span>
+                            </div>
+                        </div>
+
+                        <!-- Route 5: Katsuta to Tomobe SA -->
+                        <div id="card-route5" onclick="selectRoute(5)" class="cursor-pointer border-2 border-transparent bg-slate-900/60 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 h-2 w-full bg-violet-500 opacity-0 group-hover:opacity-100 transition-all"></div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-violet-950/60 text-violet-400 border border-violet-500/30 text-xs font-bold px-2.5 py-1 rounded-lg">
+                                    <span data-en="Route 5: Katsuta ➔ SA" data-ja="ルート5：勝田エリア ➔ 友部SA">ルート5：勝田エリア ➔ 友部SA</span>
+                                </span>
+                                <div class="text-right">
+                                    <div class="text-lg font-black text-violet-400">25m - 30m</div>
+                                    <div class="text-[11px] font-bold text-slate-400">34 km &bull; Toll ~¥980</div>
+                                </div>
+                            </div>
+                            <h3 class="font-extrabold text-slate-200 text-base" data-en="Via Hitachinaka IC (Expressway)" data-ja="ひたちなかIC ➔ 東水戸道路・北関東道">ひたちなかIC ➔ 東水戸道路・北関東道</h3>
+                            <p class="text-xs text-slate-400 mt-1.5" data-en="Full expressway route from Hitachinaka. Avoids central Mito traffic lights." data-ja="勝田（ひたちなか）から東水戸道路、北関東道を一気に西進。夕方の渋滞を安全に回避します。">勝田（ひたちなか）から東水戸道路、北関東道を一気に西進。夕方の渋滞を安全に回避します。</p>
+                            <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                                <span class="text-violet-400 font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-traffic-light"></i>
+                                    <span data-en="Avoids Mito central congestion" data-ja="水戸市街の渋滞を安全に回避">水戸市街の渋滞を安全に回避</span>
+                                </span>
+                                <span class="text-violet-400 font-extrabold group-hover:translate-x-1.5 transition-transform" data-en="View Directions →" data-ja="道順を表示 →">道順を表示 →</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Category 3 Route Cards (To Tokai PA) -->
+                    <div class="space-y-4 hidden" id="category3-cards">
+                        
+                        <!-- Route 6: Ibaraki-Machi to Tokai PA -->
+                        <div id="card-route6" onclick="selectRoute(6)" class="cursor-pointer border-2 border-transparent bg-slate-900/60 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 h-2 w-full bg-amber-500 opacity-0 group-hover:opacity-100 transition-all"></div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-amber-950/60 text-amber-400 border border-amber-500/30 text-xs font-bold px-2.5 py-1 rounded-lg">
+                                    <span data-en="Route 6: Ibaraki-Machi ➔ Tokai PA" data-ja="ルート6：茨城町 ➔ 東海PA">ルート6：茨城町 ➔ 東海PA</span>
+                                </span>
+                                <div class="text-right">
+                                    <div class="text-lg font-black text-amber-400">35m - 40m</div>
+                                    <div class="text-[11px] font-bold text-slate-400">41 km &bull; Toll ~¥1,210</div>
+                                </div>
+                            </div>
+                            <h3 class="font-extrabold text-slate-200 text-base" data-en="Via Tomobe JCT & Joban Exp" data-ja="友部JCT・常磐道（下り）経由">友部JCT・常磐道（下り）経由</h3>
+                            <p class="text-xs text-slate-400 mt-1.5" data-en="Fastest expressway route connecting Ibaraki-machi to the Tokai PA via Joban Expressway." data-ja="一般道から茨城町西IC経由で常磐道に入り、快適な高速道路ドライブで東海PAへ直行するスマートアクセス。">一般道から茨城町西IC経由で常磐道に入り、快適な高速道路ドライブで東海PAへ直行するスマートアクセス。</p>
+                            <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                                <span class="text-amber-400 font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-road"></i>
+                                    <span data-en="Expressway Focus" data-ja="常磐道経由・走りやすさ抜群">常磐道経由・走りやすさ抜群</span>
+                                </span>
+                                <span class="text-amber-400 font-extrabold group-hover:translate-x-1.5 transition-transform" data-en="View Directions →" data-ja="道順を表示 →">道順を表示 →</span>
+                            </div>
+                        </div>
+
+                        <!-- Route 7: Katsuta to Tokai PA (Updated Orange to Deep Magenta/Fuchsia) -->
+                        <div id="card-route7" onclick="selectRoute(7)" class="cursor-pointer border-2 border-transparent bg-slate-900/60 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 h-2 w-full bg-fuchsia-600 opacity-0 group-hover:opacity-100 transition-all"></div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-fuchsia-950/60 text-fuchsia-400 border border-fuchsia-500/30 text-xs font-bold px-2.5 py-1 rounded-lg">
+                                    <span data-en="Route 7: Katsuta ➔ Tokai PA" data-ja="ルート7：勝田エリア ➔ 東海PA">ルート7：勝田エリア ➔ 東海PA</span>
+                                </span>
+                                <div class="text-right">
+                                    <div class="text-lg font-black text-fuchsia-400">20m - 25m</div>
+                                    <div class="text-[11px] font-bold text-slate-400">16 km &bull; Toll ~¥310</div>
+                                </div>
+                            </div>
+                            <h3 class="font-extrabold text-slate-200 text-base" data-en="Via Naka IC (Short Route)" data-ja="一般道 ➔ 那珂IC ➔ 常磐道（1区間）">一般道 ➔ 那珂IC ➔ 常磐道（1区間）</h3>
+                            <p class="text-xs text-slate-400 mt-1.5" data-en="Super short local hybrid route joining at Naka IC to hit Tokai PA." data-ja="勝田から県道31号で那珂ICへ抜け、常磐道を1区間だけ北上して東海PAへ到着する最短コース。">勝田から県道31号で那珂ICへ抜け、常磐道を1区間だけ北上して東海PAへ到着する最短コース。</p>
+                            <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                                <span class="text-fuchsia-400 font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-bolt"></i>
+                                    <span data-en="Ultra Fast Access" data-ja="移動時間わずか20分強">移動時間わずか20分強</span>
+                                </span>
+                                <span class="text-fuchsia-400 font-extrabold group-hover:translate-x-1.5 transition-transform" data-en="View Directions →" data-ja="道順を表示 →">道順を表示 →</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Right Side: Interactive Map Frame (7 Cols) -->
+            <div class="lg:col-span-7 flex flex-col h-[550px] lg:h-auto min-h-[480px] bg-slate-900/60 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden relative">
+                <!-- Map Overlay Toolbar -->
+                <div class="absolute top-4 left-4 right-4 sm:left-14 sm:right-auto z-[1000] bg-slate-950/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-2xl border border-slate-800 flex items-center justify-between sm:justify-start sm:space-x-3 text-xs">
+                    <span class="font-extrabold flex items-center gap-2 text-slate-200">
+                        <span class="inline-block w-3.5 h-3.5 rounded-full bg-cyan-500 animate-ping"></span>
+                        <span data-en="Interactive Map" data-ja="インタラクティブマップ">インタラクティブマップ</span>
+                    </span>
+                    <span class="hidden sm:inline text-slate-700">|</span>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="startSimulation()" class="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 px-3 py-1.5 rounded-xl font-black flex items-center gap-1.5 transition-all shadow-lg shadow-cyan-500/20">
+                            <i class="fa-solid fa-play"></i> <span data-en="Simulate Drive" data-ja="🚗 ドライブ開始">🚗 ドライブ開始</span>
+                        </button>
+                        <button onclick="resetMapZoom()" class="bg-slate-800 hover:bg-slate-750 text-cyan-400 p-1.5 rounded-xl transition-colors border border-slate-750" title="全体を表示">
+                            <i class="fa-solid fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Leaflet Mount -->
+                <div id="routeMap" class="w-full h-full z-10"></div>
+                
+                <!-- Map Legend -->
+                <div id="mapLegend" class="absolute bottom-4 left-4 z-[1000] bg-slate-950/95 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-slate-800 text-xs space-y-2">
+                    <!-- Dynamic Map Legend items injected via javascript -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Cost Estimator Calculator Component -->
+        <section class="mt-10 bg-slate-900/60 rounded-3xl p-6 md:p-8 shadow-2xl border border-slate-800">
+            <h2 class="text-base md:text-lg font-black mb-6 flex items-center gap-2.5 text-slate-100">
+                <i class="fa-solid fa-calculator text-cyan-400 text-xl"></i>
+                <span data-en="Interactive Trip Cost Estimator" data-ja="ドライブ料金＆ガソリン代シミュレーター">ドライブ料金＆ガソリン代シミュレーター</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2" data-en="Fuel Economy (km/L)" data-ja="マイカーの平均燃費 (km/L)">マイカーの平均燃費 (km/L)</label>
+                    <input type="number" id="fuelEconomy" value="15" min="5" max="50" onchange="calculateCosts()" class="w-full px-4 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-slate-200 text-sm font-semibold focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-all" />
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2" data-en="Gasoline Price (¥/L)" data-ja="レギュラーガソリン単価 (円/L)">レギュラーガソリン単価 (円/L)</label>
+                    <input type="number" id="gasPrice" value="175" min="100" max="300" onchange="calculateCosts()" class="w-full px-4 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-slate-200 text-sm font-semibold focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-all" />
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2" data-en="ETC Card Discount" data-ja="ETC割引の適用">ETC割引の適用</label>
+                    <select id="etcDiscount" onchange="calculateCosts()" class="w-full px-4 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-slate-200 text-sm font-semibold focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-all">
+                        <option value="etc" selected data-en="ETC Applied" data-ja="ETC料金適用">ETC適用 (通常時)</option>
+                        <option value="cash" data-en="Cash Rate (Regular)" data-ja="一般料金 (現金払い)">一般料金 (現金払い)</option>
+                    </select>
+                </div>
+                <div class="bg-gradient-to-br from-cyan-600 to-blue-700 p-4 rounded-2xl flex items-center justify-between border border-cyan-500/20 shadow-lg md:col-span-1">
+                    <div>
+                        <div class="text-[10px] text-cyan-200 uppercase font-black tracking-wider" data-en="Estimated Cost" data-ja="想定ドライブ合計金額">想定ドライブ合計金額</div>
+                        <div class="text-2xl font-black text-white" id="totalCostDisplay">¥2,608</div>
+                    </div>
+                    <i class="fa-solid fa-coins text-3xl text-cyan-300/30"></i>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-500 flex flex-col sm:flex-row justify-between gap-2">
+                <span data-en="*Calculations are rough estimates based on chosen route distance and tolls." data-ja="*選択中のルートの「総距離」と「高速料金（ETC料金、通常料金）」を基に、ガソリン消費コストを自動合算しています。">*選択中のルートの「総距離」と「高速料金（ETC料金、通常料金）」を基に、ガソリン消費コストを自動合算しています。</span>
+                <div class="font-bold flex items-center gap-1 text-slate-300">
+                    <span data-en="Selected Route: " data-ja="現在選択中: ">現在選択中: </span>
+                    <strong id="calcRouteName" class="text-cyan-400 font-extrabold">ルート1</strong>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Direction Steps Section -->
+        <section class="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Route Steps Detailed Column (8 Cols) -->
+            <div class="lg:col-span-8 bg-slate-900/60 rounded-3xl p-6 md:p-8 shadow-2xl border border-slate-800 flex flex-col justify-between">
+                <div>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-800 pb-5 mb-5 gap-3">
+                        <h2 class="text-base md:text-lg font-black flex items-center gap-2 text-slate-100">
+                            <i class="fa-solid fa-list-check text-cyan-400 text-xl"></i>
+                            <span id="routeStepsTitle" data-en="Driving Directions" data-ja="詳細なルート案内・走行手順">詳細なルート案内・走行手順</span>
+                        </h2>
+                        <button onclick="copyRouteToClipboard()" class="text-xs text-cyan-400 hover:text-cyan-300 font-extrabold border border-cyan-500/30 px-4 py-2 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/40 flex items-center gap-1.5 shadow-sm transition-all">
+                            <i class="fa-solid fa-copy text-cyan-400"></i>
+                            <span data-en="Copy Guide" data-ja="案内テキストをコピー">案内テキストをコピー</span>
+                        </button>
+                    </div>
+
+                    <!-- Steps Container (Dynamically updated via JS) -->
+                    <div id="routeSteps" class="space-y-4">
+                        <!-- Populated by javascript -->
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-5 border-t border-slate-800 text-[11px] text-slate-500 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-cyan-400"></i>
+                    <span data-en="Data gathered and cross-checked based on recent central Ibaraki road mapping." data-ja="茨城県中央地域および東関東エリアの最新道路マップ・ジャンクション構造に対応しています。">茨城県中央地域および東関東エリアの最新道路マップ・ジャンクション構造に対応しています。</span>
+                </div>
+            </div>
+
+            <!-- Warning and Tips Card (4 Cols) -->
+            <div class="lg:col-span-4 space-y-8">
+                
+                <!-- Drive Stats Comparison Widget -->
+                <div class="bg-slate-900/60 rounded-3xl p-6 shadow-2xl border border-slate-800">
+                    <h3 class="font-extrabold text-slate-200 mb-4 flex items-center gap-2 text-sm md:text-base">
+                        <i class="fa-solid fa-sliders text-emerald-400"></i>
+                        <span data-en="Route Attributes" data-ja="ルート特性比較">ルート特性比較</span>
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-slate-400 mb-1.5">
+                                <span data-en="Driving Ease (Stress-free)" data-ja="運転のしやすさ (快適性)">運転のしやすさ (快適性)</span>
+                                <span id="statEase" class="font-extrabold text-slate-200">★★★☆☆</span>
+                            </div>
+                            <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                                <div id="barEase" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-500" style="width: 60%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-slate-400 mb-1.5">
+                                <span data-en="Night Visibility" data-ja="夜間の明るさ (街灯・標識)">夜間の明るさ (街灯・標識)</span>
+                                <span id="statLight" class="font-extrabold text-slate-200">★★☆☆☆</span>
+                            </div>
+                            <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                                <div id="barLight" class="bg-gradient-to-r from-cyan-400 to-indigo-500 h-full rounded-full transition-all duration-500" style="width: 40%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-slate-400 mb-1.5">
+                                <span data-en="Cost Efficiency" data-ja="経済性 (料金・燃費効率)">経済性 (料金・燃費効率)</span>
+                                <span id="statCost" class="font-extrabold text-slate-200">★★★★☆</span>
+                            </div>
+                            <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                                <div id="barCost" class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-full transition-all duration-500" style="width: 80%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warnings and Local Advice with dark cyan style -->
+                <div class="bg-gradient-to-b from-[#0f172a] to-[#1e1b4b] border border-slate-800 rounded-3xl p-6 shadow-2xl text-sm space-y-4">
+                    <h3 class="font-black text-cyan-400 flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation text-rose-500 text-lg"></i>
+                        <span data-en="Crucial Driving Warnings" data-ja="茨城の夜間走行：超重要アドバイス">茨城の夜間走行：超重要アドバイス</span>
+                    </h3>
+
+                    <div class="space-y-4 text-xs leading-relaxed text-slate-300">
+                        <div class="flex items-start gap-2.5">
+                            <span class="bg-slate-800 text-cyan-400 font-extrabold px-2 py-0.5 rounded-lg text-[9px] tracking-wider mt-0.5">R51</span>
+                            <div>
+                                <strong data-en="Speed Traps on Route 51" data-ja="国道51号の速度取締り（オービス）">国道51号の速度取締り（オービス）</strong>
+                                <p data-en="Route 51 through Hokota/Oarai has wide, flat straights that invite speed. Extremely famous for police traps and Orbis cameras." data-ja="鉾田〜大洗間の国道51号は道幅が広く、直線が多いため速度が出やすく、移動式オービスやパトカー追尾の多発エリアです。制限速度を厳守してください。</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-2.5">
+                            <span class="bg-slate-800 text-cyan-400 font-extrabold px-2 py-0.5 rounded-lg text-[9px] tracking-wider mt-0.5">ANML</span>
+                            <div>
+                                <strong data-en="Wildlife Collisions (Boars/Tanuki)" data-ja="野生動物（イノシシ・タヌキ）の飛び出し">野生動物（イノシシ・タヌキ）の飛び出し</strong>
+                                <p data-en="Inland areas around Hokota/Ibaraki-machi are agricultural. At night, animals often sprint across dark rural lanes." data-ja="鉾田や茨城町のローカル内陸エリアは畑や山林が多く、夜間はイノシシやタヌキなどの飛び出しリスクが高まります。ハイビームを積極的に活用しましょう。</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-2.5">
+                            <span class="bg-slate-800 text-cyan-400 font-extrabold px-2 py-0.5 rounded-lg text-[9px] tracking-wider mt-0.5">SMART</span>
+                            <div>
+                                <strong data-en="Tokai Smart IC (ETC only)" data-ja="東海スマートICのご利用（ETC限定）">東海スマートICのご利用（ETC限定）</strong>
+                                <p data-en="Tokai PA includes a Smart IC. Open for all classes of ETC cars 24 hours. Be absolutely sure to stop completely before the toll gate bar." data-ja="東海PAにはスマートICが併設されています。ETC搭載車であれば一般道へ直接流出入が可能です。スマートICでは、開閉バーの手前で必ず「一旦停止」してください。</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-2.5">
+                            <span class="bg-slate-800 text-cyan-400 font-extrabold px-2 py-0.5 rounded-lg text-[9px] tracking-wider mt-0.5">LOCAL</span>
+                            <div>
+                                <strong data-en="Tokai PA Local Specialty" data-ja="東海PA（下り）の名物と営業時間">東海PA（下り）の名物と営業時間</strong>
+                                <p data-en="Tokai PA offers legendary local dried sweet potato ('Hoshi-imo'). The shopping and dining area is open from 7:00 AM to 19:00 PM." data-ja="ひたちなか・東海エリアは全国一の干し芋（乾燥芋）名産地。東海PAでも地元の美味しい干し芋を多数販売しています。売店・軽食コーナーは夜19:00までの営業です。" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- Detailed Comparison Table -->
+        <section class="mt-10 bg-slate-900/60 rounded-3xl p-6 md:p-8 shadow-2xl border border-slate-800 overflow-hidden">
+            <h2 class="text-base md:text-lg font-black mb-6 flex items-center gap-2 text-slate-100">
+                <i class="fa-solid fa-table text-cyan-400 text-xl"></i>
+                <span data-en="Route Comparison at a Glance" data-ja="全7ルート比較まとめ表">全7ルート比較まとめ表</span>
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm border-collapse min-w-[800px]">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-cyan-400 font-extrabold bg-slate-950/60">
+                            <th class="py-4 px-5 rounded-l-xl" data-en="Route Option" data-ja="ルート名">ルート名</th>
+                            <th class="py-4 px-5" data-en="Key Areas Passed" data-ja="主要経由地">主要経由地</th>
+                            <th class="py-4 px-5" data-en="Approx. Distance" data-ja="総距離">総距離</th>
+                            <th class="py-4 px-5" data-en="Approx. Drive Time" data-ja="所要時間 (日曜18:30目安)">所要時間 (日曜18:30目安)</th>
+                            <th class="py-4 px-5" data-en="Toll Fees (ETC)" data-ja="高速料金 (ETC)">高速料金 (ETC)</th>
+                            <th class="py-4 px-5 rounded-r-xl" data-en="Best For..." data-ja="こんな人におすすめ">こんな人におすすめ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 font-semibold text-slate-300">
+                        <!-- Category 1 -->
+                        <tr class="hover:bg-slate-850/40 transition-colors">
+                            <td class="py-4 px-5 text-rose-400 font-extrabold" data-en="1. Requested Route" data-ja="1. ご要望ルート">1. ご要望ルート</td>
+                            <td class="py-4 px-5" data-en="Itako, Hokota, Ibaraki-machi" data-ja="潮来・鉾田・茨城町">潮来・鉾田・茨城町</td>
+                            <td class="py-4 px-5">95 km</td>
+                            <td class="py-4 px-5 text-white font-black">1h 55m – 2h 10m</td>
+                            <td class="py-4 px-5">~¥1,500</td>
+                            <td class="py-4 px-5 text-xs font-normal text-slate-400" data-en="Scenic variety, agricultural landscape." data-ja="観光スポット巡り、田園風景をじっくり走りたい方。">観光スポット巡り、田園風景をじっくり走りたい方。</td>
+                        </tr>
+                        <tr class="hover:bg-slate-850/40 transition-colors">
+                            <td class="py-4 px-5 text-blue-400 font-extrabold" data-en="2. Speed Route" data-ja="2. 高速道路最速ルート">2. 高速道路最速ルート</td>
+                            <td class="py-4 px-5" data-en="Tsukuba JCT, Joban Exp" data-ja="圏央道・常磐道（つくば経由）">圏央道・常磐道（つくば経由）</td>
+                            <td class="py-4 px-5">115 km</td>
+                            <td class="py-4 px-5 text-white font-black">1h 25m – 1h 35m</td>
+                            <td class="py-4 px-5">~¥3,800</td>
+                            <td class="py-4 px-5 text-xs font-normal text-slate-400" data-en="Easiest and most stress-free drive at night." data-ja="【最推奨】夜間・週末の疲労低減、時間最速、安全第一な方。">【最推奨】夜間・週末の疲労低減、時間最速、安全第一な方。</td>
+                        </tr>
+                        <tr class="hover:bg-slate-850/40 transition-colors">
+                            <td class="py-4 px-5 text-emerald-400 font-extrabold" data-en="3. Coastal Bypass" data-ja="3. 沿岸国道バイパス">3. 沿岸国道バイパス</td>
+                            <td class="py-4 px-5" data-en="Kashima, Coastal R51, Oarai" data-ja="神栖・鹿嶋・大洗（国道51号）">神栖・鹿嶋・大洗（国道51号）</td>
+                            <td class="py-4 px-5">85 km</td>
+                            <td class="py-4 px-5 text-white font-black">1h 45m – 1h 55m</td>
+                            <td class="py-4 px-5">~¥1,100</td>
+                            <td class="py-4 px-5 text-xs font-normal text-slate-400" data-en="Saving toll costs while keeping navigation very simple." data-ja="通行料金を安く節約しつつ、わかりやすい一本道で移動したい方。">通行料金を安く節約しつつ、わかりやすい一本道で移動したい方。</td>
+                        </tr>
+                        <!-- Category 2 -->
+                        <tr class="hover:bg-slate-850/40 transition-colors border-t-2 border-slate-800">
+                            <td class="py-4 px-5 text-teal-400 font-extrabold" data-en="4. Ibaraki-Machi ➔ SA" data-ja="4. 茨城町 ➔ 友部SA">4. 茨城町 ➔ 友部SA</td>
+                            <td class="py-4 px-5" data-en="Ibaraki-machi Nishi IC, Tomobe JCT" data-ja="茨城町西IC・友部JCT">茨城町西IC・友部JCT</td>
+                            <td class="py-4 px-5">18 km</td>
+                            <td class="py-4 px-5 text-white font-black">15m – 20m</td>
+                            <td class="py-4 px-5">~¥410</td>
+                            <td class="py-4 px-5 text-xs font-normal text-slate-400" data-en="Connecting local Ibaraki-machi to Tomobe SA swiftly." data-ja="茨城町内から短時間で友部SA（いわき・日立方面）へ接続したい方。">茨城町内から短時間で友部SA（いわき・日立方面）へ接続したい方。</td>
+                        </tr>
+                        <tr class="hover:bg-slate-850/40 transition-colors">
+                            <td class="py-4 px-5 text-violet-400 font-extrabold" data-en="5. Katsuta ➔ SA" data-ja="5. 勝田エリア ➔ 友部SA">5. 勝田エリア ➔ 友部SA</td>
+                            <td class="py-4 px-5" data-en="Hitachinaka IC, Higashi-Mito Road, Tomobe JCT" data-ja="ひたちなかIC・東水戸道路・友部JCT">ひたちなかIC・東水戸道路・友部JCT</td>
+                            <td class="py-4 px-5">34 km</td>
+                            <td class="py-4 px-5 text-white font-black">25m – 30m</td>
+                            <td class="py-4 px-5">~¥980</td>
+                            <td class="py-4 px-5 text-xs font-normal text-slate-400" data-en="Avoiding central Mito congestion on weekend evenings." data-ja="ひたちなか・勝田周辺から、水戸市街の一般道の混雑を避けてSAに直行したい方。">ひたちなか・勝田周辺から、水戸市街の一般道の混雑を避けてSAに直行したい方。</td>
+                        </tr>
+                        <!-- Category 3 -->
+                        <tr class="hover:bg-slate-850/40 transition-colors border-t-2 border-slate-800">
+                            <td class="py-4 px-5 text-amber-400 font-extrabold" data-en="6. Ibaraki-Machi ➔ Tokai PA" data-ja="6. 茨城町 ➔ 東海PA">6. 茨城町 ➔ 東海PA</td>
+                            <td class="py-4 px-5" data-en="Ibaraki-machi West IC, Tomobe JCT, Naka IC" data-ja="茨城町西IC・友部JCT・那珂IC">茨城町西IC・友部JCT・那珂IC</td>
+                            <td class="py-4 px-5">41 km</td>
+                            <td class="py-4 px-5 text-white font-black">35m – 40m</td>
+                            <td class="py-4 px-5">~¥1,210</td>
+                            <td class="py-4 px-5 text-xs font-normal text-slate-400" data-en="Connecting local Ibaraki-machi to Tokai PA via Joban Expressway." data-ja="茨城町から常磐道でスムーズに東海PA（スマートIC）へ直行したい方。">茨城町から常磐道でスムーズに東海PA（スマートIC）へ直行したい方。</td>
+                        </tr>
+                        <tr class="hover:bg-slate-850/40 transition-colors">
+                            <td class="py-4 px-5 text-fuchsia-400 font-extrabold" data-en="7. Katsuta ➔ Tokai PA" data-ja="7. 勝田 ➔ 東海PA">7. 勝田 ➔ 東海PA</td>
+                            <td class="py-4 px-5" data-en="Naka IC, Joban Expressway" data-ja="那珂IC・常磐道（1区間）">那珂IC・常磐道（1区間）</td>
+                            <td class="py-4 px-5">16 km</td>
+                            <td class="py-4 px-5 text-white font-black">20m – 25m</td>
+                            <td class="py-4 px-5">~¥310</td>
+                            <td class="py-4 px-5 text-xs font-normal text-slate-400" data-en="Short and fast route from Hitachinaka/Katsuta to Tokai PA." data-ja="勝田・ひたちなか周辺から、那珂IC経由で手軽に東海PAへ行きたい方。">勝田・ひたちなか周辺から、那珂IC経由で手軽に東海PAへ行きたい方。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-850 py-8 mt-16 shadow-inner">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500">
+            <p>&copy; 成田空港・茨城・勝田 ➔ 水戸・友部SA・東海PA ドライブナビ。安全運転をお楽しみください。</p>
+            <p class="mt-2">※本アプリのマップ情報は実在する道路網を基にした概略ルートモデルであり、実際の道路標識や最新の交通規則に従って運転してください。</p>
+        </div>
+    </footer>
+
+    <!-- Toast message for Clipboard Copy -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-2.5 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i class="fa-solid fa-circle-check text-slate-950 text-lg"></i>
+        <span id="toastMsg" class="font-extrabold text-xs md:text-sm">コピーしました</span>
+    </div>
+
+    <script>
+        // State variables
+        let currentLanguage = 'ja';
+        let currentCategory = 'narita_mito'; 
+        let currentRouteId = 1;
+        let map;
+        let polylines = {};
+        let activeMarkers = [];
+        let simCarMarker = null;
+        let simInterval = null;
+
+        // Custom Leaflet Icons cache
+        let markerIcons = {};
+
+        // Coordinates Data mapped for simulation & display
+        const coordinates = {
+            // Route 1 Custom (Narita to Mito)
+            1: [
+                [35.772, 140.392], // Narita Airport
+                [35.803, 140.428], // Taiei JCT
+                [35.885, 140.528], // Sawara-Katori IC
+                [35.918, 140.589], // Itako IC
+                [35.942, 140.552], // Itako local
+                [36.001, 140.492], // Aso (West Kitaura)
+                [36.155, 140.517], // Hokota Town
+                [36.141, 140.505], // Hokota IC
+                [36.216, 140.457], // Ibaraki Airport North IC (Ibaraki-machi)
+                [36.264, 140.435], // Ibaraki-machi JCT
+                [36.335, 140.490], // Mito-Minami IC
+                [36.370, 140.476]  // Mito Station
+            ],
+            // Route 2 Speed (Narita to Mito)
+            2: [
+                [35.772, 140.392], // Narita Airport
+                [35.803, 140.428], // Taiei JCT
+                [35.940, 140.291], // Inashiki IC (Ken-O)
+                [36.003, 140.198], // Ushiku-Ami IC
+                [36.037, 140.165], // Tsukuba JCT (Joban E6)
+                [36.153, 140.210], // Tsuchiura-Kita IC
+                [36.195, 140.245], // Chiyoda-Ishioka IC
+                [36.264, 140.435], // Ibaraki-machi JCT
+                [36.376, 140.385], // Mito IC
+                [36.370, 140.420], // Route 50 Bypass
+                [36.370, 140.476]  // Mito Station
+            ],
+            // Route 3 Coastal (Narita to Mito)
+            3: [
+                [35.772, 140.392], // Narita Airport
+                [35.803, 140.428], // Taiei JCT
+                [35.885, 140.528], // Sawara-Katori IC
+                [35.918, 140.589], // Itako IC
+                [35.960, 140.638], // Kashima
+                [36.070, 140.620], // Taiyo
+                [36.160, 140.613], // Hokota East Coast
+                [36.312, 140.574], // Oarai
+                [36.349, 140.528], // Naka River Bridge
+                [36.370, 140.476]  // Mito Station
+            ],
+            // Route 4: Ibaraki-Machi to Tomobe SA
+            4: [
+                [36.292, 140.424], // Ibaraki-machi Town Hall
+                [36.264, 140.435], // Ibaraki-machi JCT
+                [36.314, 140.364], // Ibaraki-machi West IC
+                [36.342, 140.306], // Tomobe JCT
+                [36.353, 140.312]  // Tomobe SA (Iwaki-bound)
+            ],
+            // Route 5: Katsuta to Tomobe SA
+            5: [
+                [36.395, 140.525], // Katsuta station area
+                [36.386, 140.564], // Hitachinaka IC
+                [36.335, 140.490], // Mito-Minami IC
+                [36.293, 140.472], // Ibaraki-machi East IC
+                [36.264, 140.435], // Ibaraki-machi JCT
+                [36.314, 140.364], // Ibaraki-machi West IC
+                [36.342, 140.306], // Tomobe JCT
+                [36.353, 140.312]  // Tomobe SA (Iwaki-bound)
+            ],
+            // Route 6: Ibaraki-Machi to Tokai PA
+            6: [
+                [36.292, 140.424], // Ibaraki-machi Town Hall
+                [36.264, 140.435], // Ibaraki-machi JCT
+                [36.314, 140.364], // Ibaraki-machi West IC
+                [36.342, 140.306], // Tomobe JCT
+                [36.376, 140.385], // Mito IC
+                [36.438, 140.491], // Naka IC
+                [36.4848, 140.5510] // Tokai PA (Downbound)
+            ],
+            // Route 7: Katsuta to Tokai PA
+            7: [
+                [36.395, 140.525], // Katsuta station area
+                [36.425, 140.510], // Local Road toward Naka
+                [36.438, 140.491], // Naka IC
+                [36.4848, 140.5510] // Tokai PA (Downbound)
+            ]
+        };
+
+        // Static Route attributes for display
+        const routeMeta = {
+            1: { ease: "★★★☆☆", easeVal: 60, light: "★★☆☆☆", lightVal: 40, cost: "★★★★☆", costVal: 80, tollEtc: 1500, tollCash: 1900, distance: 95 },
+            2: { ease: "★★★★★", easeVal: 100, light: "★★★★★", lightVal: 100, cost: "★★☆☆☆", costVal: 40, tollEtc: 3800, tollCash: 4400, distance: 115 },
+            3: { ease: "★★★★☆", easeVal: 80, light: "★★★☆☆", lightVal: 60, cost: "★★★★★", costVal: 100, tollEtc: 1100, tollCash: 1400, distance: 85 },
+            4: { ease: "★★★★☆", easeVal: 85, light: "★★★☆☆", lightVal: 70, cost: "★★★★☆", costVal: 90, tollEtc: 410, tollCash: 580, distance: 18 },
+            5: { ease: "★★★★★", easeVal: 95, light: "★★★★☆", lightVal: 85, cost: "★★★☆☆", costVal: 70, tollEtc: 980, tollCash: 1300, distance: 34 },
+            6: { ease: "★★★★☆", easeVal: 85, light: "★★★★☆", lightVal: 80, cost: "★★★☆☆", costVal: 70, tollEtc: 1210, tollCash: 1530, distance: 41 },
+            7: { ease: "★★★★★", easeVal: 95, light: "★★★★☆", lightVal: 80, cost: "★★★★★", costVal: 95, tollEtc: 310, tollCash: 410, distance: 16 }
+        };
+
+        // Complete Japanese Turn-by-Turn Instruction Steps
+        const stepsJA = {
+            1: [
+                { icon: "fa-plane-departure", title: "成田空港からスタート", desc: "空港を出発し、標識に従って「東関東自動車道（E51）」を北上（潮来・鹿嶋方面）します。" },
+                { icon: "fa-road", title: "利根川を越えて茨城県へ", desc: "東関東道を約30km走り、利根川を渡って茨城県に入ります。終点の「潮来（いたこ）IC」で高速を降ります。" },
+                { icon: "fa-signs-post", title: "国道51号から県道18号へ（鉾田方面）", desc: "潮来ICから、国道51号線を北へ進みます。途中、左折して「県道18号（水戸鉾田佐原線）」に入ると、北浦の西側を抜けるショートカットのどかな田舎道になり、鉾田市街へ直通します。" },
+                { icon: "fa-tree", title: "鉾田（ほこた）市内を通過", desc: "鉾田の豊かな畑作地帯を通過します。週末夕方の18:30以降は、地元の買い物客や低速の農耕車がいる場合があります。道幅が細くなる区間に注意してください。" },
+                { icon: "fa-road-barrier", title: "鉾田IC ➔ 東関東道（一部開通区区間）へ", desc: "鉾田市街地から「鉾田IC」に入り、東関東道（現在無料区間）をさらに北へ進みます。" },
+                { icon: "fa-industry", title: "茨城空港北ICで一般道へ（茨城町）", desc: "約9km北上し、茨城町のエリアにある「茨城空港北IC」で降ります。またはそのままジャンクションを経由して北関東自動車道へと乗り換えることも可能です。" },
+                { icon: "fa-route", title: "北関東自動車道（E50）で東へ", desc: "「茨城町JCT」から北関東道に入り、水戸南・大洗方面へ数キロだけ進みます。「水戸南IC」で高速を降り、すぐ北の国道51号または国道6号に合流します。" },
+                { icon: "fa-flag-checkered", title: "水戸駅に到着", desc: "大通りをまっすぐ北上すると、水戸駅の南口および東口広場に到着します。お疲れ様でした！" }
+            ],
+            2: [
+                { icon: "fa-plane-departure", title: "成田空港からスタート", desc: "空港から「東関東自動車道（E51）」を東京方面（上り）に少し進みます。" },
+                { icon: "fa-turn-right", title: "大栄（たいえい）JCTで圏央道（C4）へ", desc: "大栄JCTで「圏央道（首都圏中央連絡自動車道）」に入り、つくば・土浦方面へ向けて北西方向に進みます。道は綺麗に整備されています。" },
+                { icon: "fa-compass", title: "つくばJCTで常磐道（E6）へ合流", desc: "圏央道を快適に走り、つくばJCTで「常磐自動車道」の北上（水戸・いわき方面）へ乗り換えます。このルートが最も道路幅が広く走行が容易です。" },
+                { icon: "fa-lightbulb", title: "照明抜群の快適高速クルージング", desc: "常磐道を北へ一気に55km疾走します。夜間もライトとガイドラインがしっかり見え、ストレスが一番ありません。日曜夜の東京方面（逆方向）の帰省ラッシュ渋滞とは無関係にスイスイ進めます。" },
+                { icon: "fa-road", title: "水戸ICで下車", desc: "「水戸IC」を降りて、そのまま片側2〜3車線の広い「国道50号水戸バイパス」を東へ進みます。" },
+                { icon: "fa-flag-checkered", title: "水戸駅に到着", desc: "国道50号を約15分走り、県庁方面から水戸中央市街に入ると、水戸駅北口・南口に迷わず到着します。" }
+            ],
+            3: [
+                { icon: "fa-plane-departure", title: "成田空港からスタート", desc: "空港から「東関東自動車道」を北に走り、潮来ICまで向かいます（ルート1と同様）。" },
+                { icon: "fa-location-arrow", title: "潮来ICから国道51号（鹿嶋バイパス）へ", desc: "潮来ICを降りたらすぐに東へ進み、「国道51号（鹿嶋バイパス）」に合流します。ここから大洗・水戸までほぼ一本道の沿岸走破です。" },
+                { icon: "fa-road", title: "平坦で広大な国道51号沿岸道路", desc: "鹿嶋・鉾田の東側を海と並行して進みます。この区間はほぼフラットで片側2車線が多く、信号も市街地ほど多くないため、非常にリラックスして走れます。" },
+                { icon: "fa-water", title: "大洗（おおあらい）を通過", desc: "アクアワールドやフェリーで有名な大洗町を通過します。週末夕方のドライブにもロマンチックな雰囲気が楽しめます。" },
+                { icon: "fa-bridge", title: "那珂川（なかがわ）を渡る", desc: "大洗から那珂川の大きな橋を渡ればすぐ水戸市に入ります。" },
+                { icon: "fa-flag-checkered", title: "水戸駅に到着", desc: "川を渡ると国道51号は自然に水戸駅東口・南口エリアへ直結します。料金が最小限で非常に経済的です。" }
+            ],
+            4: [
+                { icon: "fa-location-dot", title: "茨城町中心部を出発", desc: "茨城町役場周辺などの中心エリアから、県道16号または国道6号を経由して北関東自動車道方面へ進みます。" },
+                { icon: "fa-road-barrier", title: "茨城町西ICから北関東道（西行）へ", desc: "「茨城町西IC」から北関東自動車道（宇都宮・筑波方面）へ流入します。" },
+                { icon: "fa-turn-right", title: "友部JCTから常磐自動車道へ", desc: "西へ約7km走り、「友部JCT」に到達後、分岐を「常磐道（下り・いわき/日立方面）」へ進みます。" },
+                { icon: "fa-square-parking", title: "友部SA（下り）に直通・到着", desc: "友部JCTから常磐道に合流するとすぐ左手に入口車線があり、そのまま「友部SA」に進入することができます。" }
+            ],
+            5: [
+                { icon: "fa-train", title: "勝田駅・勝田エリアからスタート", desc: "勝田中央の昭和通り（通称33m道路）を通り、「ひたちなかIC」を目指して東（または南）へ進みます。" },
+                { icon: "fa-road-barrier", title: "ひたちなかICから東水戸道路へ", desc: "「ひたちなかIC」より東水戸道路（北関東自動車道直結、水戸・友部方面西行）へ乗ります。" },
+                { icon: "fa-gauge-high", title: "東水戸道路・北関東道を西進", desc: "片側2車線の平坦で非常に走りやすい有料区間（東水戸道路）から北関東道に入り、水戸南IC・茨城町JCTを通過します。" },
+                { icon: "fa-turn-right", title: "友部JCTから常磐道（下り）へ合流", desc: "そのまま直進し「友部JCT」に到達後、いわき・日立方面（下り線）の常磐道へ分岐します。" },
+                { icon: "fa-square-parking", title: "友部SA（下り）に直接進入", desc: "合流車線から途切れることなく友部SA（下り線）の導入路に直接進入します。お疲れ様でした！" }
+            ],
+            6: [
+                { icon: "fa-location-dot", title: "茨城町中心部を出発", desc: "茨城町役場周辺から県道16号を経由して北関東自動車道「茨城町西IC」を目指します。" },
+                { icon: "fa-road-barrier", title: "茨城町西ICから北関東道（西行）へ", desc: "「茨城町西IC」から高速道路に進入し、宇都宮・つくば方面へ進みます。" },
+                { icon: "fa-turn-right", title: "友部JCTで常磐自動車道（北行）へ", desc: "「友部JCT」で分岐を「常磐道（いわき・日立方面）」へ進み、北上を開始します。" },
+                { icon: "fa-gauge-high", title: "水戸・那珂区間を快適に北上", desc: "常磐道を北へ約25km進みます。途中、水戸ICや水戸北スマートIC、那珂ICを順に通過します。夜間は照明もあり非常に走りやすいです。" },
+                { icon: "fa-mug-hot", title: "東海PA（下り）に到着", desc: "那珂ICの先、約5km地点の左側にある「東海PA（下り）」に直接進入します（※ETC車はそのまま東海スマートICから一般道へ降りることも可能です）。" }
+            ],
+            7: [
+                { icon: "fa-train", title: "勝田駅・勝田エリアからスタート", desc: "勝田中央の昭和通りや県道31号を経由し、那珂市方面へ北西に進みます。" },
+                { icon: "fa-signs-post", title: "一般道で那珂ICへ移動", desc: "県道31号線を北上し、那珂バイパスを抜け「那珂IC」の乗り口へアクセスします。" },
+                { icon: "fa-road-barrier", title: "那珂ICから常磐自動車道（下り）へ", desc: "「那珂IC」から高速道路（いわき・日立方面）に入ります。" },
+                { icon: "fa-gauge-high", title: "常磐道を1区間（約5km）だけ北上", desc: "那珂ICからわずか約5km、片側2車線の平坦で安全な常磐道をいわき方面へ北上します。" },
+                { icon: "fa-mug-hot", title: "東海PA（下り）に到着", desc: "最初のパーキングエリアである「東海PA（下り）」に直接進入します。東海村へのアクセスや休憩に最適です。" }
+            ]
+        };
+
+        // Complete English Turn-by-Turn Instruction Steps
+        const stepsEN = {
+            1: [
+                { icon: "fa-plane-departure", title: "Start from Narita Airport", desc: "Exit the airport, and follow instructions to merge onto Higashi-Kanto Expressway (E51) northbound towards Itako/Kashima." },
+                { icon: "fa-road", title: "Cross Tone River to Ibaraki Prefecture", desc: "Drive for ~30km, cross the large Tone River and exit at the terminal gate: Itako IC." },
+                { icon: "fa-signs-post", title: "Route 51 onto Prefectural Route 18", desc: "From Itako IC, head north briefly on Route 51, then turn left onto Route 18 (Sawara-Hokota line). This scenic road runs along the west of Lake Kitaura straight to Hokota." },
+                { icon: "fa-tree", title: "Pass through Hokota agricultural lanes", desc: "Drive through Ibaraki's farming heart. Be careful of slower farm machinery or early shoppers around 6:30 PM." },
+                { icon: "fa-road-barrier", title: "Hokota IC to Higashi-Kanto Expressway", desc: "Enter Hokota IC and take the newly opened expressway section northbound." },
+                { icon: "fa-industry", title: "Exit at Ibaraki Airport North IC", desc: "After 9km of expressway driving, exit at Ibaraki Airport North IC in the middle of Ibaraki-machi." },
+                { icon: "fa-route", title: "Connect to Kita-Kanto Expressway (E50)", desc: "From Ibaraki-machi JCT, transition onto the Kita-Kanto Expressway heading east towards Mito-Minami IC." },
+                { icon: "fa-flag-checkered", title: "Arrive at Mito Station", desc: "From Mito-Minami IC, merge north onto Route 51 which guides you straight to the South Exit of Mito Station." }
+            ],
+            2: [
+                { icon: "fa-plane-departure", title: "Start from Narita Airport", desc: "Head out from Narita Airport and briefly take the Higashi-Kanto Expressway inbound towards Tokyo." },
+                { icon: "fa-turn-right", title: "Taiei JCT to Ken-O Expressway (C4)", desc: "Merge onto Ken-O Expressway heading northwest towards Tsukuba. Extremely clean, modern road." },
+                { icon: "fa-compass", title: "Tsukuba JCT to Joban Expressway (E6)", desc: "Switch onto the Joban Expressway northbound towards Mito/Iwaki. This is the smoothest multi-lane highway available." },
+                { icon: "fa-lightbulb", title: "Stress-free Highway Cruising at Night", desc: "Cruise 55km north on the Joban Expressway. High quality illumination and wide roads bypasses any congested Tokyo-bound weekend traffic." },
+                { icon: "fa-road", title: "Exit at Mito IC", desc: "Exit at Mito IC and merge directly onto the wide, 3-lane National Route 50 (Mito Bypass) heading east." },
+                { icon: "fa-flag-checkered", title: "Arrive at Mito Station", desc: "After about 15 minutes of straight driving on Route 50, you'll easily glide into central Mito Station area." }
+            ],
+            3: [
+                { icon: "fa-plane-departure", title: "Start from Narita Airport", desc: "Exit the airport, taking Higashi-Kanto Expressway northbound to Itako IC (Same as Route 1)." },
+                { icon: "fa-location-arrow", title: "Itako IC to Route 51 Coastal Bypass", desc: "From Itako IC, head east and merge onto Route 51 Coastal Bypass heading north towards Kashima." },
+                { icon: "fa-road", title: "Flat, Coastal Straight driving", desc: "Follow Route 51 north. It runs parallel to the Pacific Ocean. It is highly flat, mostly 2 lanes with less signals, making it very comfortable." },
+                { icon: "fa-water", title: "Pass through Oarai beach town", desc: "Drive through the beautiful maritime town of Oarai, highly popular for surfers and seafood markets." },
+                { icon: "fa-bridge", title: "Cross the Naka River Bridge", desc: "Cross the large Naka River bridge entering Mito City limits." },
+                { icon: "fa-flag-checkered", title: "Arrive at Mito Station", desc: "Route 51 directly terminates and flows straight into the eastern and southern plazas of Mito Station." }
+            ],
+            4: [
+                { icon: "fa-location-dot", title: "Start from Ibaraki-Machi", desc: "From central Ibaraki-machi, head toward the Kita-Kanto Expressway via local roads or Route 6." },
+                { icon: "fa-road-barrier", title: "Enter Ibaraki-machi Nishi IC", desc: "Merge onto the Kita-Kanto Expressway (E50) westbound toward Utsunomiya/Tsukuba." },
+                { icon: "fa-turn-right", title: "Merge at Tomobe JCT", desc: "At Tomobe JCT, branch onto the Joban Expressway (E6) northbound heading toward Iwaki/Hitachi (downbound lane)." },
+                { icon: "fa-square-parking", title: "Arrive at Tomobe SA (Iwaki-bound)", desc: "Immediately after joining the Joban Expressway, enter the lane to access the spacious Tomobe SA." }
+            ],
+            5: [
+                { icon: "fa-train", title: "Start from Katsuta Area", desc: "Depart from central Katsuta, driving east on Showa-Dori to reach Hitachinaka IC." },
+                { icon: "fa-road-barrier", title: "Enter Hitachinaka IC", desc: "Merge onto the Higashi-Mito Road (E50) heading west toward Mito/Tomobe." },
+                { icon: "fa-gauge-high", title: "Westbound Cruising on E50", desc: "Drive on the smooth dual-lane highway, passing Ibaraki-machi JCT towards Tomobe." },
+                { icon: "fa-turn-right", title: "Tomobe JCT to Joban Expressway", desc: "Switch onto the Joban Expressway outbound (Iwaki-bound) northwards." },
+                { icon: "fa-square-parking", title: "Arrive directly at Tomobe SA", desc: "Directly filter into Tomobe SA (Iwaki-bound) entrance from the merge lane." }
+            ],
+            6: [
+                { icon: "fa-location-dot", title: "Start from Ibaraki-Machi", desc: "Depart from central Ibaraki-machi, heading toward Ibaraki-machi Nishi IC via Prefectural Road 16." },
+                { icon: "fa-road-barrier", title: "Enter Ibaraki-machi Nishi IC", desc: "Join the Kita-Kanto Expressway (E50) westbound heading toward Tsukuba/Utsunomiya." },
+                { icon: "fa-turn-right", title: "Switch to Joban Expressway at Tomobe JCT", desc: "At Tomobe JCT, take the branch for Joban Expressway northbound toward Iwaki/Hitachi." },
+                { icon: "fa-gauge-high", title: "Smooth Cruising North Bound", desc: "Drive north for 25km on the Joban Expressway, passing Mito IC, Mito-Kita Smart IC and Naka IC." },
+                { icon: "fa-mug-hot", title: "Arrive at Tokai PA (Downbound)", desc: "Pull directly into the Tokai PA (downbound). Highly convenient for Tokai village local access." }
+            ],
+            7: [
+                { icon: "fa-train", title: "Start from Katsuta Area", desc: "Depart from central Katsuta, driving northwest on Prefectural Road 31 toward Naka city." },
+                { icon: "fa-signs-post", title: "Drive to Naka IC via Local Highway", desc: "Follow local Road 31 or Route 6 to comfortably reach the entrance of Naka IC." },
+                { icon: "fa-road-barrier", title: "Enter Naka IC", desc: "Merge onto the Joban Expressway northbound heading toward Iwaki." },
+                { icon: "fa-gauge-high", title: "Drive North for 1 Stop (~5km)", desc: "Cruise on the comfortable highway northbound for just one quick stop." },
+                { icon: "fa-mug-hot", title: "Arrive at Tokai PA (Downbound)", desc: "Enter Tokai PA (downbound) on your left. ETC vehicles can exit immediately via Tokai Smart IC." }
+            ]
+        };
+
+        window.onload = function() {
+            // Initialize Map focused on central Ibaraki
+            map = L.map('routeMap', {
+                zoomControl: false 
+            }).setView([36.08, 140.45], 9);
+
+            // OpenStreetMap tiles with custom filter styling
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add custom zoom control to top-right
+            L.control.zoom({ position: 'topright' }).addTo(map);
+
+            // Set up DivIcons for Leaflet Markers with GPS dark-cockpit look
+            markerIcons = {
+                airport: L.divIcon({
+                    html: '<div class="bg-rose-500/90 text-slate-900 p-2.5 rounded-full border-2 border-slate-900 shadow-lg flex items-center justify-center w-9 h-9"><i class="fa-solid fa-plane text-xs"></i></div>',
+                    className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+                }),
+                station: L.divIcon({
+                    html: '<div class="bg-cyan-500/90 text-slate-900 p-2.5 rounded-full border-2 border-slate-900 shadow-lg flex items-center justify-center w-9 h-9"><i class="fa-solid fa-train text-xs"></i></div>',
+                    className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+                }),
+                town: L.divIcon({
+                    html: '<div class="bg-teal-500/90 text-slate-900 p-2.5 rounded-full border-2 border-slate-900 shadow-lg flex items-center justify-center w-9 h-9"><i class="fa-solid fa-tree text-xs"></i></div>',
+                    className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+                }),
+                katsuta: L.divIcon({
+                    html: '<div class="bg-violet-500/90 text-slate-900 p-2.5 rounded-full border-2 border-slate-900 shadow-lg flex items-center justify-center w-9 h-9"><i class="fa-solid fa-building text-xs"></i></div>',
+                    className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+                }),
+                tomobe: L.divIcon({
+                    html: '<div class="bg-emerald-500/90 text-slate-900 p-2.5 rounded-full border-2 border-slate-900 shadow-lg flex items-center justify-center w-9 h-9"><i class="fa-solid fa-square-parking text-xs"></i></div>',
+                    className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+                }),
+                tokai: L.divIcon({
+                    html: '<div class="bg-amber-500/90 text-slate-900 p-2.5 rounded-full border-2 border-slate-900 shadow-lg flex items-center justify-center w-9 h-9"><i class="fa-solid fa-mug-hot text-xs"></i></div>',
+                    className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+                })
+            };
+
+            // Draw Polylines for ALL routes
+            drawPolylines();
+
+            // Default route selection to 1
+            switchCategory('narita_mito');
+
+            // Initialize Toggle event listeners
+            document.getElementById('langToggle').addEventListener('click', toggleLanguage);
+        };
+
+        function drawPolylines() {
+            // Route 1 (Custom): Hot Coral Rose Line
+            polylines[1] = L.polyline(coordinates[1], {
+                color: '#f43f5e', weight: 6, opacity: 0.5, lineJoin: 'round'
+            }).addTo(map);
+
+            // Route 2 (Expressway): Updated to Dark/Royal Blue Line (Changed from Neon Cyan #06b6d4)
+            polylines[2] = L.polyline(coordinates[2], {
+                color: '#1d4ed8', weight: 6, opacity: 0.5, lineJoin: 'round'
+            }).addTo(map);
+
+            // Route 3 (Coastal): Vibrant Emerald Green Line
+            polylines[3] = L.polyline(coordinates[3], {
+                color: '#10b981', weight: 6, opacity: 0.5, lineJoin: 'round'
+            }).addTo(map);
+
+            // Route 4 (Ibaraki-Machi to Tomobe SA): Neon Teal Line
+            polylines[4] = L.polyline(coordinates[4], {
+                color: '#0d9488', weight: 6, opacity: 0.5, lineJoin: 'round'
+            }).addTo(map);
+
+            // Route 5 (Katsuta to Tomobe SA): Bright Violet Line
+            polylines[5] = L.polyline(coordinates[5], {
+                color: '#8b5cf6', weight: 6, opacity: 0.5, lineJoin: 'round'
+            }).addTo(map);
+
+            // Route 6 (Ibaraki-Machi to Tokai PA): Golden Amber Line
+            polylines[6] = L.polyline(coordinates[6], {
+                color: '#f59e0b', weight: 6, opacity: 0.5, lineJoin: 'round'
+            }).addTo(map);
+
+            // Route 7 (Katsuta to Tokai PA): Updated to Deep Fuchsia/Pink (Changed from High Contrast Orange #f97316)
+            polylines[7] = L.polyline(coordinates[7], {
+                color: '#db2777', weight: 6, opacity: 0.5, lineJoin: 'round'
+            }).addTo(map);
+        }
+
+        function switchCategory(category) {
+            currentCategory = category;
+            stopSimulation();
+
+            const tab1 = document.getElementById('tabCategory1');
+            const tab2 = document.getElementById('tabCategory2');
+            const tab3 = document.getElementById('tabCategory3');
+
+            const cards1 = document.getElementById('category1-cards');
+            const cards2 = document.getElementById('category2-cards');
+            const cards3 = document.getElementById('category3-cards');
+
+            // Reset Tab UI styles to dark inactive
+            [tab1, tab2, tab3].forEach(t => {
+                t.className = "flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-extrabold rounded-xl text-slate-400 hover:text-cyan-300 transition-all duration-300";
+            });
+
+            // Hide all card lists
+            [cards1, cards2, cards3].forEach(c => c.classList.add('hidden'));
+
+            if (category === 'narita_mito') {
+                tab1.className = "flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-extrabold rounded-xl bg-slate-850 text-cyan-400 shadow-md transition-all duration-300 border border-slate-700";
+                cards1.classList.remove('hidden');
+                selectRoute(1);
+            } else if (category === 'tomobe_sa') {
+                tab2.className = "flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-extrabold rounded-xl bg-slate-850 text-emerald-400 shadow-md transition-all duration-300 border border-slate-700";
+                cards2.classList.remove('hidden');
+                selectRoute(4);
+            } else if (category === 'tokai_pa') {
+                tab3.className = "flex-1 min-w-[120px] py-2.5 text-center text-xs md:text-sm font-extrabold rounded-xl bg-slate-850 text-fuchsia-400 shadow-md transition-all duration-300 border border-slate-700";
+                cards3.classList.remove('hidden');
+                selectRoute(6);
+            }
+
+            // Update map markers and legend
+            updateMapMarkers();
+            updateLegend();
+        }
+
+        // Updates markers shown on map to fit active category
+        function updateMapMarkers() {
+            // Remove previous active category markers
+            activeMarkers.forEach(m => map.removeLayer(m));
+            activeMarkers = [];
+
+            if (currentCategory === 'narita_mito') {
+                const m1 = L.marker([35.772, 140.392], {icon: markerIcons.airport}).addTo(map).bindPopup("<b>成田国際空港 (NRT)</b>");
+                const m2 = L.marker([36.370, 140.476], {icon: markerIcons.station}).addTo(map).bindPopup("<b>JR 水戸駅 (Mito Station)</b>");
+                activeMarkers.push(m1, m2);
+            } else if (currentCategory === 'tomobe_sa') {
+                const m1 = L.marker([36.292, 140.424], {icon: markerIcons.town}).addTo(map).bindPopup("<b>茨城町中心部 (Ibaraki-Machi Central)</b>");
+                const m2 = L.marker([36.395, 140.525], {icon: markerIcons.katsuta}).addTo(map).bindPopup("<b>勝田エリア (Katsuta Area)</b>");
+                const m3 = L.marker([36.353, 140.312], {icon: markerIcons.tomobe}).addTo(map).bindPopup("<b>友部SA 下り (Tomobe SA - Iwaki bound)</b>");
+                activeMarkers.push(m1, m2, m3);
+            } else if (currentCategory === 'tokai_pa') {
+                const m1 = L.marker([36.292, 140.424], {icon: markerIcons.town}).addTo(map).bindPopup("<b>茨城町中心部 (Ibaraki-Machi Central)</b>");
+                const m2 = L.marker([36.395, 140.525], {icon: markerIcons.katsuta}).addTo(map).bindPopup("<b>勝田エリア (Katsuta Area)</b>");
+                const m3 = L.marker([36.4848, 140.5510], {icon: markerIcons.tokai}).addTo(map).bindPopup("<b>東海PA 下り (Tokai PA - Iwaki bound)</b>");
+                activeMarkers.push(m1, m2, m3);
+            }
+        }
+
+        function updateLegend() {
+            const legend = document.getElementById('mapLegend');
+            legend.innerHTML = '';
+
+            const title = document.createElement('div');
+            title.className = 'font-bold text-slate-300 mb-2 border-b border-slate-800 pb-1';
+            title.setAttribute('data-en', 'Map Legend');
+            title.setAttribute('data-ja', '凡例');
+            title.textContent = currentLanguage === 'ja' ? '凡例' : 'Map Legend';
+            legend.appendChild(title);
+
+            if (currentCategory === 'narita_mito') {
+                legend.innerHTML += `
+                    <div class="flex items-center gap-2.5 font-semibold text-slate-400">
+                        <span class="w-4 h-1.5 bg-[#f43f5e] inline-block rounded-full"></span>
+                        <span data-en="R1: Custom Route" data-ja="R1: 潮来・鉾田・茨城町経由">R1: 潮来・鉾田・茨城町経由</span>
+                    </div>
+                    <div class="flex items-center gap-2.5 font-semibold text-slate-400 mt-1">
+                        <span class="w-4 h-1.5 bg-[#1d4ed8] inline-block rounded-full"></span>
+                        <span data-en="R2: Expressway Route" data-ja="R2: 圏央道・常磐道（最速）">R2: 圏央道・常磐道（最速）</span>
+                    </div>
+                    <div class="flex items-center gap-2.5 font-semibold text-slate-400 mt-1">
+                        <span class="w-4 h-1.5 bg-[#10b981] inline-block rounded-full"></span>
+                        <span data-en="R3: Coastal Route" data-ja="R3: 国道51号沿岸バイパス">R3: 国道51号沿岸バイパス</span>
+                    </div>
+                `;
+            } else if (currentCategory === 'tomobe_sa') {
+                legend.innerHTML += `
+                    <div class="flex items-center gap-2.5 font-semibold text-slate-400">
+                        <span class="w-4 h-1.5 bg-[#0d9488] inline-block rounded-full"></span>
+                        <span data-en="R4: Ibaraki-Machi ➔ Tomobe SA" data-ja="R4: 茨城町 ➔ 友部SA">R4: 茨城町 ➔ 友部SA</span>
+                    </div>
+                    <div class="flex items-center gap-2.5 font-semibold text-slate-400 mt-1">
+                        <span class="w-4 h-1.5 bg-[#8b5cf6] inline-block rounded-full"></span>
+                        <span data-en="R5: Katsuta ➔ Tomobe SA" data-ja="R5: 勝田 ➔ 友部SA">R5: 勝田 ➔ 友部SA</span>
+                    </div>
+                `;
+            } else if (currentCategory === 'tokai_pa') {
+                legend.innerHTML += `
+                    <div class="flex items-center gap-2.5 font-semibold text-slate-400">
+                        <span class="w-4 h-1.5 bg-[#f59e0b] inline-block rounded-full"></span>
+                        <span data-en="R6: Ibaraki-Machi ➔ Tokai PA" data-ja="R6: 茨城町 ➔ 東海PA">R6: 茨城町 ➔ 東海PA</span>
+                    </div>
+                    <div class="flex items-center gap-2.5 font-semibold text-slate-400 mt-1">
+                        <span class="w-4 h-1.5 bg-[#db2777] inline-block rounded-full"></span>
+                        <span data-en="R7: Katsuta ➔ Tokai PA" data-ja="R7: 勝田 ➔ 東海PA">R7: 勝田 ➔ 東海PA</span>
+                    </div>
+                `;
+            }
+        }
+
+        function selectRoute(routeId) {
+            currentRouteId = routeId;
+            stopSimulation(); // Stop any active demo drive
+
+            // Set inactive state colors for all lines
+            for (let id in polylines) {
+                let col = '#334155'; // neutral dark fallback
+                if (id == 1) col = '#f43f5e';
+                else if (id == 2) col = '#1d4ed8'; // Updated
+                else if (id == 3) col = '#10b981';
+                else if (id == 4) col = '#0d9488';
+                else if (id == 5) col = '#8b5cf6';
+                else if (id == 6) col = '#f59e0b';
+                else if (id == 7) col = '#db2777'; // Updated
+
+                polylines[id].setStyle({
+                    weight: 5,
+                    opacity: 0.15,
+                    color: col
+                });
+                
+                // Card highlight border removal
+                const card = document.getElementById(`card-route${id}`);
+                if (card) {
+                    card.className = "cursor-pointer border-2 border-transparent bg-slate-900/60 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group";
+                }
+            }
+
+            // Define neon active colors (Changed sky blue and orange to solid cobalt blue and deep magenta/fuchsia)
+            const activeColors = {
+                1: '#f43f5e', // Custom (Rose)
+                2: '#3b82f6', // Speed Route Active (Vivid Blue - replaced sky blue)
+                3: '#34d399', // Coastal Active (Green)
+                4: '#2dd4bf', // Route 4 Active (Teal)
+                5: '#a78bfa', // Route 5 Active (Lavender)
+                6: '#fbbf24', // Route 6 Active (Yellow Amber)
+                7: '#f472b6'  // Route 7 Active (Vivid Pink/Fuchsia - replaced orange)
+            };
+
+            const borderColors = {
+                1: 'border-rose-500/80 shadow-lg shadow-rose-950/20',
+                2: 'border-blue-500/80 shadow-lg shadow-blue-950/20', // Replaced cyan
+                3: 'border-emerald-500/80 shadow-lg shadow-emerald-950/20',
+                4: 'border-teal-500/80 shadow-lg shadow-teal-950/20',
+                5: 'border-violet-500/80 shadow-lg shadow-violet-950/20',
+                6: 'border-amber-500/80 shadow-lg shadow-amber-950/20',
+                7: 'border-fuchsia-500/80 shadow-lg shadow-fuchsia-950/20' // Replaced orange
+            };
+
+            // Highlight chosen route line with thick neon focus
+            polylines[routeId].setStyle({
+                weight: 8,
+                opacity: 0.95,
+                color: activeColors[routeId]
+            });
+
+            // Highlight chosen card
+            const activeCard = document.getElementById(`card-route${routeId}`);
+            if (activeCard) {
+                activeCard.className = `cursor-pointer border-2 ${borderColors[routeId]} bg-slate-900/90 p-4 rounded-2xl relative overflow-hidden group transition-all duration-300`;
+            }
+
+            // Autofit map view safely
+            map.fitBounds(polylines[routeId].getBounds(), { padding: [50, 50] });
+
+            // Update display components
+            updateDirectionsText();
+            updateAttributesStats();
+            calculateCosts();
+        }
+
+        function updateDirectionsText() {
+            const container = document.getElementById('routeSteps');
+            container.innerHTML = '';
+            
+            const steps = currentLanguage === 'ja' ? stepsJA[currentRouteId] : stepsEN[currentRouteId];
+            
+            const routeTitlesEn = {
+                1: "Route 1: Via Itako, Hokota",
+                2: "Route 2: Expressway Speed Route",
+                3: "Route 3: Coastal Route 51",
+                4: "Route 4: Ibaraki-Machi to Tomobe SA",
+                5: "Route 5: Katsuta Area to Tomobe SA",
+                6: "Route 6: Ibaraki-Machi to Tokai PA",
+                7: "Route 7: Katsuta Area to Tokai PA"
+            };
+
+            const routeTitlesJa = {
+                1: "ルート1：潮来・鉾田・茨城町経由",
+                2: "ルート2：常磐道最速ルート",
+                3: "ルート3：沿岸国道51号バイパス",
+                4: "ルート4：茨城町 ➔ 友部SA",
+                5: "ルート5：勝田エリア ➔ 友部SA",
+                6: "ルート6：茨城町 ➔ 東海PA",
+                7: "ルート7：勝田エリア ➔ 東海PA"
+            };
+            
+            // Set dynamic header titles
+            document.getElementById('routeStepsTitle').textContent = currentLanguage === 'ja' ? `走行手順：${routeTitlesJa[currentRouteId]}` : `Directions: ${routeTitlesEn[currentRouteId]}`;
+            document.getElementById('calcRouteName').textContent = currentLanguage === 'ja' ? `ルート${currentRouteId}` : `Route ${currentRouteId}`;
+
+            steps.forEach((step, index) => {
+                const stepCard = document.createElement('div');
+                stepCard.className = 'flex gap-4 p-4 rounded-2xl bg-slate-900/40 border border-slate-800 hover:border-slate-700 transition-all duration-150 shadow-sm';
+                stepCard.innerHTML = `
+                    <div class="flex-shrink-0 w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-slate-950 flex items-center justify-center font-black text-sm shadow-md">
+                        ${index + 1}
+                    </div>
+                    <div class="flex-grow">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <i class="fa-solid ${step.icon} text-cyan-400 text-sm"></i>
+                            <h4 class="font-extrabold text-slate-200 text-sm md:text-base">${step.title}</h4>
+                        </div>
+                        <p class="text-xs md:text-sm text-slate-400 leading-relaxed font-medium">${step.desc}</p>
+                    </div>
+                `;
+                container.appendChild(stepCard);
+            });
+        }
+
+        function updateAttributesStats() {
+            const stats = routeMeta[currentRouteId];
+            document.getElementById('statEase').textContent = stats.ease;
+            document.getElementById('statLight').textContent = stats.light;
+            document.getElementById('statCost').textContent = stats.cost;
+
+            document.getElementById('barEase').style.width = `${stats.easeVal}%`;
+            document.getElementById('barLight').style.width = `${stats.lightVal}%`;
+            document.getElementById('barCost').style.width = `${stats.costVal}%`;
+        }
+
+        function calculateCosts() {
+            const fuelEconomy = parseFloat(document.getElementById('fuelEconomy').value) || 15;
+            const gasPrice = parseFloat(document.getElementById('gasPrice').value) || 170;
+            const isEtc = document.getElementById('etcDiscount').value === 'etc';
+
+            const stats = routeMeta[currentRouteId];
+            const distance = stats.distance;
+            const tollBase = isEtc ? stats.tollEtc : stats.tollCash;
+
+            // Calculation formula: (Distance / Economy) * FuelPrice + Tolls
+            const fuelCost = (distance / fuelEconomy) * gasPrice;
+            const totalCost = Math.round(fuelCost + tollBase);
+
+            document.getElementById('totalCostDisplay').textContent = `¥${totalCost.toLocaleString()}`;
+        }
+
+        function startSimulation() {
+            stopSimulation(); // clear previous
+
+            const path = coordinates[currentRouteId];
+            let index = 0;
+
+            const carIcon = L.divIcon({
+                html: '<div class="text-3xl drop-shadow-2xl animate-bounce">🚗</div>',
+                className: '', iconSize: [32, 32], iconAnchor: [16, 16]
+            });
+
+            simCarMarker = L.marker(path[0], { icon: carIcon }).addTo(map);
+            map.panTo(path[0]);
+
+            simInterval = setInterval(() => {
+                index++;
+                if (index >= path.length) {
+                    stopSimulation();
+                    const arrivalMsg = {
+                        1: currentLanguage === 'ja' ? '水戸駅に到着しました！' : 'Arrived at Mito Station!',
+                        2: currentLanguage === 'ja' ? '水戸駅に到着しました！' : 'Arrived at Mito Station!',
+                        3: currentLanguage === 'ja' ? '水戸駅に到着しました！' : 'Arrived at Mito Station!',
+                        4: currentLanguage === 'ja' ? '友部SA（下り）に到着しました！' : 'Arrived at Tomobe SA!',
+                        5: currentLanguage === 'ja' ? '友部SA（下り）に到着しました！' : 'Arrived at Tomobe SA!',
+                        6: currentLanguage === 'ja' ? '東海PA（下り）に到着しました！' : 'Arrived at Tokai PA!',
+                        7: currentLanguage === 'ja' ? '東海PA（下り）に到着しました！' : 'Arrived at Tokai PA!'
+                    };
+                    showToast(arrivalMsg[currentRouteId]);
+                    return;
+                }
+                simCarMarker.setLatLng(path[index]);
+                map.panTo(path[index]);
+            }, 1000); 
+        }
+
+        function stopSimulation() {
+            if (simInterval) {
+                clearInterval(simInterval);
+                simInterval = null;
+            }
+            if (simCarMarker) {
+                map.removeLayer(simCarMarker);
+                simCarMarker = null;
+            }
+        }
+
+        function resetMapZoom() {
+            if (polylines[currentRouteId]) {
+                map.fitBounds(polylines[currentRouteId].getBounds(), { padding: [50, 50] });
+            }
+        }
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'ja' ? 'en' : 'ja';
+            document.getElementById('langToggle').textContent = currentLanguage === 'ja' ? 'English' : '日本語';
+
+            // Swap all items with data-en/data-ja attributes
+            document.querySelectorAll('[data-en]').forEach(element => {
+                const text = currentLanguage === 'ja' ? element.getAttribute('data-ja') : element.getAttribute('data-en');
+                if (text) {
+                    element.textContent = text;
+                }
+            });
+
+            updateDirectionsText();
+            updateLegend();
+        }
+
+        function copyRouteToClipboard() {
+            const steps = currentLanguage === 'ja' ? stepsJA[currentRouteId] : stepsEN[currentRouteId];
+            let textOutput = currentLanguage === 'ja' ? `【成田・茨城・勝田ドライブ案内 - ルート${currentRouteId}】\n` : `[Driving Guide - Route ${currentRouteId}]\n`;
+            
+            steps.forEach((step, index) => {
+                textOutput += `${index + 1}. ${step.title}\n   ${step.desc}\n`;
+            });
+
+            const textarea = document.createElement('textarea');
+            textarea.value = textOutput;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast(currentLanguage === 'ja' ? '道順をクリップボードにコピーしました！' : 'Directions copied to clipboard!');
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
